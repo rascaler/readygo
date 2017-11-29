@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="true">s
+	<jmxConfigurator/>
+	<!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径 -->
+	<property name="LOG_HOME" value="logs" />
+	<!-- 最大保存历史日志天数 -->
+	<property name="LOG_MAX_HISTORY" value="15" />
+	
+	<!-- 控制台输出 -->
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<!--<withJansi>true</withJansi>-->
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符 -->
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{50}) %green(%method)[%line] %msg%n</pattern>
+		</encoder>
+
+	</appender>
+	
+	<!-- 消息日志，记录项目所有消息记录 -->
+	<appender name="infoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<!-- 如果指定了file属性，当天的文件名为file属性值 -->
+		 <file>${LOG_HOME}/info.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!--日志文件输出的文件名 -->
+			<FileNamePattern>${LOG_HOME}/log.info.%d{yyyy-MM-dd}.log</FileNamePattern>
+			<maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符 -->
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{50}) %green(%method)[%line] %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- 错误日志，记录项目标识的错误级别信息 -->
+	<appender name="errorLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		 <file>${LOG_HOME}/error.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/log.error.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{50}) %green(%method)[%line] %msg%n</pattern>
+		</encoder>
+
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>ERROR</level><!-- 只接收错误级别的日志 -->
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+	</appender>
+	
+	<!-- 应用日志:存储应用程序提示信息   用法：LoggerFactory.getLogger("appLog") -->
+	<!-- <appender name="applicationInfo" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/appInfo.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/%d{yyyy-MM-dd}-appInfo.log</fileNamePattern>
+			<maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{40}[%file-%line] %msg%n</pattern>
+		</encoder>
+	</appender> -->
+	
+	 <!-- <logger name="appLog" additivity="false" level="INFO">
+   			 <appender-ref ref="applicationInfo"/>
+  	 </logger> -->
+
+	<logger name="com.sky.readygo" level="DEBUG" />
+	<logger name="druid.sql.Statement" level="debug" additivity="false">
+		<appender-ref ref="STDOUT"/>
+	</logger>
+	<logger name="druid.sql.ResultSet" level="debug" additivity="false">
+		<appender-ref ref="STDOUT"/>
+	</logger>
+
+	<!-- show parameters for hibernate sql 专为 Hibernate 定制 -->
+	<!-- <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="INFO" />
+	<logger name="org.hibernate.type.descriptor.sql.BasicExtractor" level="INFO" />
+	<logger name="org.hibernate.SQL" level="INFO" />
+	<logger name="org.hibernate.engine.QueryParameters" level="INFO" />
+	<logger name="org.hibernate.engine.query.HQLQueryPlan" level="INFO" />
+	<logger name="cn.com.hohistar" level="DEBUG" />
+	<logger name="org.hibernate.type.descriptor.sql.BasicBinder"  level="TRACE" />   -->
+
+
+	<!-- 日志输出级别 -->
+	<root level="INFO">
+		<appender-ref ref="STDOUT" />
+		<!-- 错误日志 -->
+		<appender-ref ref="errorLog" />
+		<!-- 消息日志 -->
+		<appender-ref ref="infoLog" />
+	</root>
+	
+</configuration>
