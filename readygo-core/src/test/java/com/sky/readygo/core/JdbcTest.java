@@ -5,17 +5,23 @@ import com.alibaba.druid.filter.logging.Slf4jLogFilter;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
 import com.sky.readygo.core.cglib.BeanGeneratorClass;
+import com.sky.readygo.core.domain.User;
+import org.apache.ibatis.executor.BaseExecutor;
+import org.apache.ibatis.logging.Log;
+import org.apache.ibatis.logging.LogFactory;
+import org.apache.ibatis.logging.jdbc.PreparedStatementLogger;
+import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
+import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.junit.Test;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
+import java.lang.reflect.Type;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 /**
  * Created by rascaler on 11/29/17.
@@ -86,16 +92,33 @@ public class JdbcTest {
         DruidDataSource dataSource = getMysqlDataSource();
         // 查询
         DruidPooledConnection connection =  dataSource.getConnection();
-        Statement statement = connection.createStatement();
-        ResultSet result = statement.executeQuery("select * from tb_user");
-        ResultSetMetaData rsmd = result.getMetaData();
-        for(int i = 1; i <= rsmd.getColumnCount(); i++) {
-            System.out.print("name=" + rsmd.getColumnName(i) + ";");
-            int jdbcType = rsmd.getColumnType(i);
-            System.out.print("type=" + jdbcType + ";");
-            System.out.print("typeName=" + JdbcType.forCode(jdbcType) + ";");
-            System.out.println("");
+//        PreparedStatement statement =  connection.prepareStatement("select * from tb_user");
+
+        // 获取所有表
+        DatabaseMetaData metaData = connection.getMetaData();
+        ResultSet resultSet = metaData.getTables(null, null, null, new String[] {"TABLE"});
+        while (resultSet.next()) {
+            System.out.println(resultSet.getObject("TABLE_NAME"));
         }
+        ResultSet colRet = metaData.getColumns(null,"%", "tb_user","%");
+        while(colRet.next()) {
+            String columnName = colRet.getString("COLUMN_NAME");
+            String columnType = colRet.getString("TYPE_NAME");
+            int datasize = colRet.getInt("COLUMN_SIZE");
+            int digits = colRet.getInt("DECIMAL_DIGITS");
+            int nullable = colRet.getInt("NULLABLE");
+            System.out.println(columnName+" "+columnType+" "+datasize+" "+digits+" "+ nullable);
+        }
+//        Statement statement = connection.createStatement();
+//        ResultSet result = statement.executeQuery();
+//        ResultSetMetaData rsmd = result.getMetaData();
+//        for(int i = 1; i <= rsmd.getColumnCount(); i++) {
+//            System.out.print("name=" + rsmd.getColumnName(i) + ";");
+//            int jdbcType = rsmd.getColumnType(i);
+//            System.out.print("type=" + jdbcType + ";");
+//            System.out.print("typeName=" + JdbcType.forCode(jdbcType) + ";");
+//            System.out.println("");
+//        }
 //        while (result.next()){
 //            System.out.println(result.getObject("name"));
 //        }
@@ -120,6 +143,27 @@ public class JdbcTest {
     }
 
 
+    @Test
+    public void testPrepareStatement() throws Exception{
+        DruidDataSource dataSource = getMysqlDataSource();
+        // 查询
+        DruidPooledConnection connection =  dataSource.getConnection();
+        PreparedStatement statement =  connection.prepareStatement("update tb_user set nickName=?,name=?,email=? where id=?");
+        // 参数
+        User user = new User();
+        user.setId(12);
+        user.setNickName("qing");
+        user.setName("qing");
+        user.setEmail("rascaler@163.com");
+
+        final Configuration configuration = new Configuration();
+        TypeHandlerRegistry registry = configuration.getTypeHandlerRegistry();
+        final Log log = LogFactory.getLog(BaseExecutor.class);
+        PreparedStatement preparedStatement = PreparedStatementLogger.newInstance(statement, log,1);
+        return;
+    }
+
+
 
 
 
@@ -136,7 +180,7 @@ public class JdbcTest {
         dataSource.setProxyFilters(new ArrayList<Filter>(){{add(filter);}});
         //设置连接
         dataSource.setDriverClassName("com.mysql.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://127.0.0.1:3306/rbac?allowMultiQueries=true&tinyInt1isBit=false&zeroDateTimeBehavior=convertToNull");
+        dataSource.setUrl("jdbc:mysql://127.0.0.1:3306/rbac?allowMultiQueries=true&tinyInt1isBit=false&zeroDateTimeBehavior=convertToNull&useSSL=false");
         dataSource.setUsername("root");
         dataSource.setPassword("123456");
         dataSource.setValidationQuery("select 1");
