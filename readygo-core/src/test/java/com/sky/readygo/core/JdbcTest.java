@@ -6,12 +6,19 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
 import com.sky.readygo.core.cglib.BeanGeneratorClass;
 import com.sky.readygo.core.domain.User;
+import org.apache.ibatis.builder.SqlSourceBuilder;
 import org.apache.ibatis.executor.BaseExecutor;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.logging.jdbc.PreparedStatementLogger;
+import org.apache.ibatis.mapping.BoundSql;
+import org.apache.ibatis.mapping.ParameterMapping;
+import org.apache.ibatis.mapping.SqlSource;
+import org.apache.ibatis.parsing.GenericTokenParser;
+import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
+import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.junit.Test;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -146,9 +153,7 @@ public class JdbcTest {
     @Test
     public void testPrepareStatement() throws Exception{
         DruidDataSource dataSource = getMysqlDataSource();
-        // 查询
-        DruidPooledConnection connection =  dataSource.getConnection();
-        PreparedStatement statement =  connection.prepareStatement("update tb_user set nickName=?,name=?,email=? where id=?");
+        // 定义查询参数
         // 参数
         User user = new User();
         user.setId(12);
@@ -156,10 +161,32 @@ public class JdbcTest {
         user.setName("qing");
         user.setEmail("rascaler@163.com");
 
+        // 查询
+        DruidPooledConnection connection =  dataSource.getConnection();
+        String sql = "update tb_user set nickName=#{nickName},name=#{name},email=#{email} where id=#{id}";
         final Configuration configuration = new Configuration();
+
+
+        // 装配参数
+        SqlSourceBuilder builder = new SqlSourceBuilder(configuration);
+        SqlSource sqlSource = builder.parse(sql, User.class, null);
+        BoundSql boundSql = sqlSource.getBoundSql(user);
+        List<ParameterMapping> mappings = boundSql.getParameterMappings();
+
         TypeHandlerRegistry registry = configuration.getTypeHandlerRegistry();
         final Log log = LogFactory.getLog(BaseExecutor.class);
-        PreparedStatement preparedStatement = PreparedStatementLogger.newInstance(statement, log,1);
+        PreparedStatement statement =  connection.prepareStatement(boundSql.getSql());
+        PreparedStatement ps = PreparedStatementLogger.newInstance(statement, log,1);
+        for(int i = 0;i < mappings.size();i++) {
+            ParameterMapping mapping = mappings.get(i);
+            String propertyName = mapping.getProperty();
+            TypeHandler typeHandler = mapping.getTypeHandler();
+            MetaObject metaObject = configuration.newMetaObject(user);
+            Object value = metaObject.getValue(propertyName);
+            typeHandler.setParameter(ps, i + 1, value, mapping.getJdbcType());
+        }
+        //执行sql
+        ps.execute();
         return;
     }
 

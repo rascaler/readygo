@@ -75,6 +75,10 @@
 		<appender-ref ref="STDOUT"/>
 	</logger>
 
+	<logger name="org.apache.ibatis" level="debug" additivity="false">
+		<appender-ref ref="STDOUT"/>
+	</logger>
+
 	<!-- show parameters for hibernate sql 专为 Hibernate 定制 -->
 	<!-- <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="INFO" />
 	<logger name="org.hibernate.type.descriptor.sql.BasicExtractor" level="INFO" />
